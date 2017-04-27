@@ -62,9 +62,6 @@ You can find the inputs to the particle filter in the `data` directory.
 2. y position
 3. landmark id
 
-> * Map data provided by 3D Mapping Solutions GmbH.
-
-
 #### Control Data
 `control_data.txt` contains rows of control data. Each row corresponds to the control data for the corresponding time step. The two columns represent
 1. vehicle speed (in meters per second)
@@ -77,6 +74,3 @@ These files contain observation data for all "observable" landmarks. Here observ
 1. x distance to the landmark in meters (right is positive) RELATIVE TO THE VEHICLE. 
 2. y distance to the landmark in meters (forward is positive) RELATIVE TO THE VEHICLE.
 
-> **NOTE**
-> The vehicle's coordinate system is NOT the map coordinate system. Your 
-> code will have to handle this transformation.
