@@ -11,7 +11,7 @@
 #include <iostream>
 #include <numeric>
 #include "particle_filter.h"
-#define GETSQUARE(x) (x)*(x)
+#include "helper_functions.h"
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// Set the number of particles. Initialize all particles to first position (based on estimates of 
@@ -47,22 +47,22 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// http://www.cplusplus.com/reference/random/default_random_engine/
 
 	std::default_random_engine gen;
+  std::normal_distribution<double> dist_x(0, std_pos[0]);
+  std::normal_distribution<double> dist_y(0, std_pos[1]);
+  std::normal_distribution<double> dist_theta(0 , std_pos[2]);
 
 	for(int i=0; i< num_particles;i++){
 		Particle &particle = particles[i];
 		double new_theta = particle.theta + yaw_rate * delta_t;
+    // this could be a problem, we assume yaw_rate is no zero
 		particle.x = particle.x + (velocity/yaw_rate) * (sin(new_theta) - sin(particle.theta));
 		particle.y = particle.y + (velocity/yaw_rate) * (cos(particle.theta) -  cos(new_theta));
 		particle.theta = new_theta;
 
-		std::normal_distribution<double> dist_x(particle.x, std_pos[0]);
-		std::normal_distribution<double> dist_y(particle.y, std_pos[1]);
-		std::normal_distribution<double> dist_theta(particle.theta , std_pos[2]);
-
-		//particle.id = i; 
-		particle.x = dist_x(gen);
-		particle.y = dist_y(gen);
-		particle.theta = dist_theta(gen);
+    //add noise
+		particle.x += dist_x(gen);
+		particle.y += dist_y(gen);
+		particle.theta += dist_theta(gen);
 	}
 }
 
@@ -80,7 +80,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> landmarks_in_map_c
 
     	// check distance to every landmark, map to nearest
     	for (auto & pred : landmarks_in_map_coord) {
-      		double dist_sq = GETSQUARE(obs.y - pred.y) + GETSQUARE(obs.x - pred.x);
+          double dist_sq = dist(obs.x, obs.y, pred.x, pred.y);
       		if (min_dist_sq > dist_sq) {
         		min_dist_sq = dist_sq;
         		obs.id = pred.id;
@@ -103,9 +103,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   	//   for the fact that the map's y-axis actually points downwards.)
   	//   http://planning.cs.uiuc.edu/node99.html
 
-	// some useful parameters
-  	double two_sigma_x_sq = 2 * GETSQUARE(std_landmark[0]);
-  	double two_sigma_y_sq = 2 * GETSQUARE(std_landmark[1]);
+	   // some useful parameters
+    double two_sigma_x_sq = 2 * std_landmark[0] * std_landmark[0];
+    double two_sigma_y_sq = 2 * std_landmark[1] * std_landmark[1];
   	double one_over_two_pi_sigma_sq = 1.0 / (2 * M_PI * std_landmark[0] * std_landmark[1]);
 
   	weights.clear();
@@ -127,7 +127,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     	// Select landmarks that are in range
     	std::vector<LandmarkObs> mapLandmarks;
     	for (auto &landmark : map_landmarks.landmark_list){
-      		if (GETSQUARE(p.x - landmark.x_f) + GETSQUARE(p.y - landmark.y_f) <= GETSQUARE(sensor_range)) {
+          if (dist(p.x, p.y, landmark.x_f, landmark.y_f) <= sensor_range) {
         		LandmarkObs l;
         		l.id = landmark.id_i;
         		l.x = landmark.x_f;
@@ -147,7 +147,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
          		// throw new exception("unexpected map item");
         		double delta_x = obs.x - map_landmarks.landmark_list[obs.id - 1].x_f;
         		double delta_y = obs.y - map_landmarks.landmark_list[obs.id - 1].y_f;
-        		double prob = one_over_two_pi_sigma_sq * exp(-((GETSQUARE(delta_x) / two_sigma_x_sq) + (GETSQUARE(delta_y) / two_sigma_y_sq)));
+        		double prob = one_over_two_pi_sigma_sq * exp(-(((delta_x*delta_x) / two_sigma_x_sq) + ((delta_y*delta_y) / two_sigma_y_sq)));
         		p.weight *= prob;
       		}
     	}
