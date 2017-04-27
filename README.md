@@ -1,4 +1,8 @@
 
+TODOLIST:
+1. make the visualization
+
+
 ## Introduction
 Assume the robot has been kidnapped and transported to a new location! Luckily it has a map of this location, a (noisy) GPS estimate of its initial location, and lots of (noisy) sensor and control data.
 
